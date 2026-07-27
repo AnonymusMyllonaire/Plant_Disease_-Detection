@@ -32,12 +32,8 @@ export const Pricing: React.FC = () => {
       return;
     }
 
-    // Append customer email to checkout URL if supported
-    const targetUrl = new URL(polarCheckoutUrl);
-    targetUrl.searchParams.set('customer_email', user.email);
-
-    // Open Polar checkout tab for real payment
-    window.location.href = targetUrl.toString();
+    // Direct redirect to Polar Checkout URL
+    window.location.href = polarCheckoutUrl;
   };
 
   return (
