@@ -1,29 +1,43 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Zap, Shield, Sparkles, ArrowLeft, ExternalLink } from 'lucide-react';
 
 export const Pricing: React.FC = () => {
   const { user, setPaidStatus } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Polar Checkout Link
-  const polarCheckoutUrl = import.meta.env.VITE_POLAR_CHECKOUT_URL || 'https://buy.polar.sh/polar_cl_otFJWzTJjJ1tnoWNJSFIP9BOQX2j7VN1rhwjE4IMJfz';
+  // Your exact live Polar Checkout Link
+  const polarCheckoutUrl = import.meta.env.VITE_POLAR_CHECKOUT_URL || 'https://buy.polar.sh/polar_cl_yxADj8SYBTpHgZG5alykS4BKirFg0UshmsC632g0zI5';
 
-  const handleSimulatePayment = () => {
-    // In production, Polar Webhooks or Return URL will unlock this.
-    // For demo/testing, clicking Subscribe unlocks instant access.
-    setPaidStatus(true);
-    alert('🎉 Polar Payment confirmed! Access unlocked.');
-    navigate('/');
-  };
+  // Check if returning from Polar checkout with success & checkout_id
+  useEffect(() => {
+    const checkoutId = searchParams.get('checkout_id');
+    const status = searchParams.get('status');
+
+    if (checkoutId || status === 'success') {
+      if (user) {
+        setPaidStatus(true);
+        alert('🎉 Polar Payment confirmed! Access unlocked for ' + user.email);
+        navigate('/');
+      }
+    }
+  }, [searchParams, user]);
 
   const handlePolarCheckout = () => {
-    if (polarCheckoutUrl.startsWith('http')) {
-      window.open(polarCheckoutUrl, '_blank');
+    if (!user) {
+      alert('Please sign in first so your payment links to your email account.');
+      navigate('/login');
+      return;
     }
-    // Simulate activation for user demo
-    handleSimulatePayment();
+
+    // Append customer email to checkout URL if supported
+    const targetUrl = new URL(polarCheckoutUrl);
+    targetUrl.searchParams.set('customer_email', user.email);
+
+    // Open Polar checkout tab for real payment
+    window.location.href = targetUrl.toString();
   };
 
   return (
@@ -55,7 +69,7 @@ export const Pricing: React.FC = () => {
               <h3 className="text-xl font-bold text-slate-300">Starter Demo</h3>
               <p className="text-xs text-slate-400 mt-1">Preview features & dataset information</p>
               <div className="mt-6 flex items-baseline">
-                <span className="text-4xl font-extrabold text-white">$0</span>
+                <span className="text-4xl font-extrabold text-white">Rs 0</span>
                 <span className="text-slate-400 text-sm ml-1">/ forever</span>
               </div>
 
@@ -96,8 +110,8 @@ export const Pricing: React.FC = () => {
               </div>
               <p className="text-xs text-emerald-200/70 mt-1">Full access to AI diagnosis engine</p>
               <div className="mt-6 flex items-baseline">
-                <span className="text-4xl font-extrabold text-white">$9.99</span>
-                <span className="text-slate-300 text-sm ml-1">/ month</span>
+                <span className="text-4xl font-extrabold text-white">Rs 200</span>
+                <span className="text-slate-300 text-sm ml-1">/ lifetime access</span>
               </div>
 
               <ul className="mt-8 space-y-4 text-sm text-slate-200">
@@ -120,7 +134,7 @@ export const Pricing: React.FC = () => {
               onClick={handlePolarCheckout}
               className="mt-8 w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
             >
-              <span>Pay with Polar.sh</span>
+              <span>Pay Rs 200 with Polar.sh</span>
               <ExternalLink className="w-4 h-4" />
             </button>
           </div>
@@ -128,7 +142,7 @@ export const Pricing: React.FC = () => {
 
         <div className="mt-12 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
           <Shield className="w-4 h-4 text-emerald-500" />
-          <span>Payments securely processed by Polar.sh Sandbox & Live Checkout</span>
+          <span>Payments securely processed by Polar.sh Checkout</span>
         </div>
       </div>
     </div>
