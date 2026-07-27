@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
-import { Upload, Camera, Dna } from "lucide-react";
+import { Upload, Camera, Dna, Lock, LogOut, Crown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import StatusIndicator from "./StatusIndicator";
 import ImagePreview from "./ImagePreview";
 import GlowButton from "./GlowButton";
@@ -18,11 +20,37 @@ const BioScanDashboard = () => {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const predictMutation = usePredictDisease();
 
+  const checkPaymentAccess = (): boolean => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to use the AI plant disease scanner.",
+      });
+      navigate("/login");
+      return false;
+    }
+
+    if (!user.isPaid) {
+      toast({
+        variant: "destructive",
+        title: "Pro Access Required",
+        description: "Please upgrade via Polar.sh to perform AI plant disease diagnostics.",
+      });
+      navigate("/pricing");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleFileSelect = async (file: File) => {
     if (!file) return;
+    if (!checkPaymentAccess()) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -91,10 +119,12 @@ const BioScanDashboard = () => {
   };
 
   const handleUpload = () => {
+    if (!checkPaymentAccess()) return;
     fileInputRef.current?.click();
   };
 
   const handleCamera = () => {
+    if (!checkPaymentAccess()) return;
     setShowCameraModal(true);
   };
 
@@ -125,8 +155,60 @@ const BioScanDashboard = () => {
               </p>
             </div>
           </div>
-          <StatusIndicator status={status} />
+          <div className="flex items-center gap-4">
+            <StatusIndicator status={status} />
+            {user ? (
+              <div className="flex items-center gap-3 bg-card px-4 py-2 rounded-lg border border-border">
+                <div className="text-right text-xs">
+                  <p className="font-bold text-foreground">{user.name}</p>
+                  <p className="text-muted-foreground">{user.isPaid ? 'PRO SUBSCRIBER' : 'FREE PLAN'}</p>
+                </div>
+                {!user.isPaid && (
+                  <button
+                    onClick={() => navigate('/pricing')}
+                    className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded transition-all flex items-center gap-1"
+                  >
+                    <Crown className="w-3.5 h-3.5" /> Upgrade
+                  </button>
+                )}
+                <button
+                  onClick={logout}
+                  className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 bg-primary text-primary-foreground font-semibold text-xs rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
         </header>
+
+        {!user?.isPaid && (
+          <div className="bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-emerald-950/90 border border-emerald-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-emerald-200">Payment Required for AI Predictions</h4>
+                <p className="text-xs text-slate-400">Subscribe via Polar.sh ($9.99/mo) to upload plant images and scan with camera.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg transition-all shadow-md shadow-emerald-500/20 whitespace-nowrap"
+            >
+              Unlock Pro via Polar.sh
+            </button>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
