@@ -30,35 +30,56 @@ class PlantDiseaseClassifier:
         self.class_names = ['angular_leaf_spot', 'bean_rust', 'healthy']
         self.load_model()
 
+    def download_model(self) -> bool:
+        """Download the model from MODEL_URL if configured."""
+        model_url = os.getenv("MODEL_URL")
+        if not model_url:
+            return False
+
+        try:
+            from urllib.request import urlretrieve
+
+            print(f"[INFO] Downloading model from MODEL_URL: {model_url}")
+            urlretrieve(model_url, self.model_path)
+            print(f"[OK] Model downloaded to {self.model_path}")
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to download model from MODEL_URL: {e}")
+            return False
+
     def load_model(self):
         """Loads the model if it exists, with fallback for different formats."""
-        if os.path.exists(self.model_path):
-            try:
-                # Try loading with compile=False to avoid metric issues
-                self.model = load_model(self.model_path, compile=False)
-                
-                # Recompile the model
-                self.model.compile(
-                    optimizer='adam',
-                    loss='categorical_crossentropy',
-                    metrics=['accuracy']
-                )
-                print(f"[OK] Model loaded successfully from {self.model_path}")
-            except Exception as e:
-                print(f"[ERROR] Error loading model: {e}")
-                print(f"  Trying alternative loading method...")
-                try:
-                    # Try with safe_mode for Keras 3
-                    import tensorflow as tf
-                    self.model = tf.keras.models.load_model(self.model_path, safe_mode=False)
-                    print(f"[OK] Model loaded with safe_mode=False")
-                except Exception as e2:
-                    print(f"[ERROR] Alternative loading also failed: {e2}")
-                    print(f"[INFO] The model file appears to be corrupted. Please retrain using: python classifier.py")
+        if not os.path.exists(self.model_path):
+            if self.download_model():
+                print(f"[INFO] Model downloaded successfully to {self.model_path}")
+            else:
+                print(f"Model file not found: {self.model_path}")
                 self.model = None
-        else:
-            print(f"Model file not found: {self.model_path}")
-            self.model = None
+                return
+
+        try:
+            # Try loading with compile=False to avoid metric issues
+            self.model = load_model(self.model_path, compile=False)
+            
+            # Recompile the model
+            self.model.compile(
+                optimizer='adam',
+                loss='categorical_crossentropy',
+                metrics=['accuracy']
+            )
+            print(f"[OK] Model loaded successfully from {self.model_path}")
+        except Exception as e:
+            print(f"[ERROR] Error loading model: {e}")
+            print(f"  Trying alternative loading method...")
+            try:
+                # Try with safe_mode for Keras 3
+                import tensorflow as tf
+                self.model = tf.keras.models.load_model(self.model_path, safe_mode=False)
+                print(f"[OK] Model loaded with safe_mode=False")
+            except Exception as e2:
+                print(f"[ERROR] Alternative loading also failed: {e2}")
+                print(f"[INFO] The model file appears to be corrupted. Please retrain using: python classifier.py")
+                self.model = None
 
     def predict(self, img_path):
         """

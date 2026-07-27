@@ -88,12 +88,16 @@ Render is the recommended host for the Python backend.
 2. Add a new web service with the root directory set to this project folder.
 3. Set environment to **Python**.
 4. Use build command:
-   - `pip install -r requirements.txt`
+   - `bash -lc 'if [ -n "$MODEL_URL" ]; then curl -L -o plant_model.h5 "$MODEL_URL"; fi && pip install -r requirements.txt'`
 5. Use start command:
    - `uvicorn api:app --host 0.0.0.0 --port $PORT`
-6. Set environment variable:
+6. Set environment variables:
    - `PYTHONUNBUFFERED=1`
+   - `MODEL_URL=https://<your-model-storage>/plant_model.h5`
 7. After deployment, note the backend URL and use it in the frontend.
+
+> Note: Render will download `plant_model.h5` during build from `MODEL_URL`.
+> Do not commit the model file directly to GitHub unless you use Git LFS.
 
 ### Frontend on Vercel
 
