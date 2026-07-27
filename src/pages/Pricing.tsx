@@ -8,8 +8,7 @@ export const Pricing: React.FC = () => {
   const navigate = useNavigate();
 
   // Polar Checkout Link
-  // Users can configure VITE_POLAR_CHECKOUT_URL or default to sandbox checkout
-  const polarCheckoutUrl = import.meta.env.VITE_POLAR_CHECKOUT_URL || 'https://sandbox.polar.sh/checkout';
+  const polarCheckoutUrl = import.meta.env.VITE_POLAR_CHECKOUT_URL || 'https://buy.polar.sh/polar_cl_otFJWzTJjJ1tnoWNJSFIP9BOQX2j7VN1rhwjE4IMJfz';
 
   const handleSimulatePayment = () => {
     // In production, Polar Webhooks or Return URL will unlock this.
