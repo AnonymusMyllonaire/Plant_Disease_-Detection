@@ -49,11 +49,16 @@ class PlantDiseaseClassifier:
 
     def load_model(self):
         """Loads the model if it exists, with fallback for different formats."""
-        if not os.path.exists(self.model_path):
+        # Check if model file exists or if it is just a Git LFS pointer text file (< 2000 bytes)
+        if os.path.exists(self.model_path) and os.path.getsize(self.model_path) < 2000:
+            print(f"[WARNING] {self.model_path} is a Git LFS pointer file! Attempting git lfs pull...")
+            os.system("git lfs pull")
+
+        if not os.path.exists(self.model_path) or os.path.getsize(self.model_path) < 2000:
             if self.download_model():
                 print(f"[INFO] Model downloaded successfully to {self.model_path}")
             else:
-                print(f"Model file not found: {self.model_path}")
+                print(f"Model file not found or invalid: {self.model_path}")
                 self.model = None
                 return
 
