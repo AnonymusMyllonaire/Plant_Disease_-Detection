@@ -25,4 +25,4 @@ dist-ssr
 
 # Local environment and model files
 .env
-plant_model.h5
+
